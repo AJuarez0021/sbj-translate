@@ -1,4 +1,4 @@
-# sbj-encrypt (Spring Boot Java - Encrypt)
+# sbj-translate (Spring Boot Java - Translate)
 Application to translate texts into other languages
 
 # swagger
