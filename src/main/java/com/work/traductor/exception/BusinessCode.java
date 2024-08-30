@@ -1,8 +1,8 @@
 package com.work.traductor.exception;
 
 /**
- *
- * @author effit
+ * 
+ * @author linux
  */
 public enum BusinessCode implements ErrorCode {
 

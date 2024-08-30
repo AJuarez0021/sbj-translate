@@ -9,9 +9,8 @@ import io.swagger.v3.oas.models.info.Info;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * The Class SwaggerConfig.
- *
- * @author ajuarez
+ * 
+ * @author linux
  */
 @Configuration
 @Slf4j
