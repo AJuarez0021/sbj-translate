@@ -39,16 +39,16 @@ public class TraductorServiceImpl implements TraductorService {
     @Override
     public LanguagesDTO getLanguage(String code) {
         List<LanguagesDTO> languages = getLanguages();
-        Optional<LanguagesDTO> language = languages.stream().filter(l -> l.getCode().equals(code)).findFirst();
-        if (!language.isPresent()) {
-            throw new ServiceException(HttpStatus.NOT_FOUND, 
-                    String.format("Code %s does not exist", code));
-        }
-        return language.get();
+        validateCode(languages, code);
+        return findLanguage(languages, code).get();
     }
 
     @Override
     public ResponseTranslatorDTO translate(LanguagesDTO from, LanguagesDTO to, String text) {
+        List<LanguagesDTO> languages = getLanguages();
+        validateCode(languages, from.getCode());
+        validateCode(languages, to.getCode());
+
         if (to.getCode().equals(Languages.NONE.getCode()) || from.getCode().equals(to.getCode())) {
             return new ResponseTranslatorDTO(text);
         }
@@ -66,6 +66,9 @@ public class TraductorServiceImpl implements TraductorService {
     @CircuitBreaker(name = "translateFeign", fallbackMethod = "fallbackTranslate")
     @Override
     public ResponseTranslatorDTO translate(LanguagesDTO to, String text) {
+        List<LanguagesDTO> languages = getLanguages();
+        validateCode(languages, to.getCode());
+        
         if (to.getCode().equals(Languages.NONE.getCode())) {
             return new ResponseTranslatorDTO(text);
         }
@@ -86,5 +89,17 @@ public class TraductorServiceImpl implements TraductorService {
         error.setStatusCode(500);
         error.setError("Service not available");
         return error;
+    }
+
+    private void validateCode(List<LanguagesDTO> languages, String code) {
+        Optional<LanguagesDTO> language = findLanguage(languages, code);
+        if (!language.isPresent()) {
+            throw new ServiceException(HttpStatus.NOT_FOUND,
+                    String.format("Code %s does not exist", code));
+        }
+    }
+
+    private Optional<LanguagesDTO> findLanguage(List<LanguagesDTO> languages, String code) {
+        return languages.stream().filter(l -> l.getCode().equals(code)).findFirst();
     }
 }
