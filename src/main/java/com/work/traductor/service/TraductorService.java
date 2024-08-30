@@ -11,6 +11,8 @@ import java.util.List;
 public interface TraductorService {
 
     List<LanguagesDTO> getLanguages();
+    
+    LanguagesDTO getLanguage(String code);
 
     ResponseTranslatorDTO translate(LanguagesDTO from, LanguagesDTO to, String text);
 

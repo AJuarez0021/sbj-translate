@@ -1,12 +1,18 @@
 package com.work.traductor.service;
 
 import com.work.traductor.client.TranslateFeign;
+import com.work.traductor.dto.ErrorDTO;
 import com.work.traductor.dto.LanguagesDTO;
 import com.work.traductor.dto.RequestTranslatorDTO;
 import com.work.traductor.dto.ResponseTranslatorDTO;
+import com.work.traductor.exception.ServiceException;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 /**
@@ -14,6 +20,7 @@ import org.springframework.stereotype.Service;
  * @author linux
  */
 @Service
+@Slf4j
 public class TraductorServiceImpl implements TraductorService {
 
     @Autowired
@@ -27,6 +34,17 @@ public class TraductorServiceImpl implements TraductorService {
             list.add(new LanguagesDTO(lang.getCode(), lang.toString()));
         }
         return list;
+    }
+
+    @Override
+    public LanguagesDTO getLanguage(String code) {
+        List<LanguagesDTO> languages = getLanguages();
+        Optional<LanguagesDTO> language = languages.stream().filter(l -> l.getCode().equals(code)).findFirst();
+        if (!language.isPresent()) {
+            throw new ServiceException(HttpStatus.NOT_FOUND, 
+                    String.format("Code %s does not exist", code));
+        }
+        return language.get();
     }
 
     @Override
@@ -45,6 +63,7 @@ public class TraductorServiceImpl implements TraductorService {
         return client.translate(req);
     }
 
+    @CircuitBreaker(name = "translateFeign", fallbackMethod = "fallbackTranslate")
     @Override
     public ResponseTranslatorDTO translate(LanguagesDTO to, String text) {
         if (to.getCode().equals(Languages.NONE.getCode())) {
@@ -59,5 +78,13 @@ public class TraductorServiceImpl implements TraductorService {
         req.setQ(text);
         req.setApiKey("");
         return client.translate(req);
+    }
+
+    public ErrorDTO fallbackTranslate(Throwable t) {
+        log.error("Error: ", t);
+        ErrorDTO error = new ErrorDTO();
+        error.setStatusCode(500);
+        error.setError("Service not available");
+        return error;
     }
 }
